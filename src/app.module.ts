@@ -1,20 +1,21 @@
 import { Module } from '@nestjs/common';
-import { createObserveModule } from '@nestjs/observe';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
-import { MusicsController } from './musics/musics.controller.js';
-
-export const { ObserveModule, ObserveInstrument } = createObserveModule();
+import { MongooseModule } from '@nestjs/mongoose';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { ArtistsModule } from './musics/artists.module.js';
+import { AlbumsModule } from './musics/albums.module.js';
+import { TracksModule } from './musics/track.module.js';
 
 @Module({
   imports: [
-    ObserveModule.forRoot({
-      appKey: 'YOUR_APP_KEY',
-      appSecret: 'YOUR_APP_SECRET',
-      serviceId: 'music-api-nest',
+    MongooseModule.forRoot('mongodb://localhost/music-api'),
+    ServeStaticModule.forRoot({
+      rootPath: join(import.meta.dirname, '..', 'public'),
+      serveRoot: '/public',
     }),
+    ArtistsModule,
+    AlbumsModule,
+    TracksModule,
   ],
-  controllers: [AppController, MusicsController],
-  providers: [AppService],
 })
 export class AppModule {}
