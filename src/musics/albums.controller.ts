@@ -8,12 +8,16 @@ import {
     Body,
     UseInterceptors,
     UploadedFile,
+    UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { AlbumsService } from './albums.service.js';
 import { CreateAlbumDto } from './album.dto.js';
+import { TokenAuthGuard } from '../auth/token-auth.guard.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
 
 @Controller('albums')
 export class AlbumsController {
@@ -30,6 +34,7 @@ export class AlbumsController {
     }
 
     @Post()
+    @UseGuards(TokenAuthGuard)
     @UseInterceptors(
         FileInterceptor('cover', {
             storage: diskStorage({
@@ -51,6 +56,8 @@ export class AlbumsController {
     }
 
     @Delete(':id')
+    @UseGuards(TokenAuthGuard, RolesGuard)
+    @Roles('admin')
     delete(@Param('id') id: string) {
         return this.albumsService.delete(id);
     }

@@ -7,12 +7,18 @@ import {
     Body,
     UseInterceptors,
     UploadedFile,
+    UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+
 import { ArtistsService } from './artists.service.js';
 import { CreateArtistDto } from './artist.dto.js';
+
+import { TokenAuthGuard } from '../auth/token-auth.guard.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
 
 @Controller('artists')
 export class ArtistsController {
@@ -29,14 +35,15 @@ export class ArtistsController {
     }
 
     @Post()
+    @UseGuards(TokenAuthGuard)
     @UseInterceptors(
         FileInterceptor('photo', {
             storage: diskStorage({
                 destination: './public/uploads/artists',
                 filename: (req, file, callback) => {
-                    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
                     const ext = extname(file.originalname);
-                    callback(null, `${uniqueSuffix}${ext}`);
+
+                    callback(null, `${Date.now()}${ext}`);
                 },
             }),
         }),
@@ -45,11 +52,16 @@ export class ArtistsController {
         @Body() createArtistDto: CreateArtistDto,
         @UploadedFile() file?: Express.Multer.File,
     ) {
-        const photoPath = file ? `public/uploads/artists/${file.filename}` : undefined;
+        const photoPath = file
+            ? `public/uploads/artists/${file.filename}`
+            : undefined;
+
         return this.artistsService.create(createArtistDto, photoPath);
     }
 
     @Delete(':id')
+    @UseGuards(TokenAuthGuard, RolesGuard)
+    @Roles('admin')
     delete(@Param('id') id: string) {
         return this.artistsService.delete(id);
     }
